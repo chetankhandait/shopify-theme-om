@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v2 as cloudinary } from 'cloudinary';
-import { compressImageServer } from '@/lib/server-image-compression';
 
 // Configure Cloudinary once
 cloudinary.config({
@@ -46,42 +45,21 @@ export async function POST(request: NextRequest) {
       filename
     });
 
-    // Check file size (50MB limit before compression)
-    const maxSize = 50 * 1024 * 1024; // 50MB
+    // Check file size (20MB limit)
+    const maxSize = 20 * 1024 * 1024; // 20MB
     if (file.size > maxSize) {
       console.error('File too large:', file.size, 'bytes');
       return NextResponse.json(
-        { error: 'File too large. Maximum size is 50MB.' },
+        { error: 'File too large. Maximum size is 20MB.' },
         { status: 413 }
       );
     }
 
-    // Convert file to buffer first
+    // Convert file to buffer
     console.log('Converting file to buffer...');
     const bytes = await file.arrayBuffer();
-    let buffer = Buffer.from(bytes);
-    console.log('Original buffer created, size:', buffer.length);
-    
-    // Compress image if it's larger than 2MB
-    if (buffer.length > 2 * 1024 * 1024) {
-      console.log('Compressing image for Cloudinary upload...');
-      try {
-        const compressionResult = await compressImageServer(buffer, {
-          maxSizeInMB: 9,  // Compress to max 9MB (under Cloudinary's 10MB limit)
-          quality: 95,     // High quality (95%)
-          maxWidth: 6000,  // 6K max width
-          maxHeight: 6000  // 6K max height
-        });
-        
-        if (compressionResult.wasCompressed) {
-          console.log(`Image compressed for upload: ${(buffer.length / 1024 / 1024).toFixed(1)}MB → ${(compressionResult.compressedSize / 1024 / 1024).toFixed(1)}MB`);
-          buffer = compressionResult.compressedBuffer;
-        }
-      } catch (error) {
-        console.error('Compression failed:', error);
-        // Continue with original buffer if compression fails
-      }
-    }
+    const buffer = Buffer.from(bytes);
+    console.log('Buffer created, size:', buffer.length);
 
     // Upload to Cloudinary with timeout
     console.log('Starting Cloudinary upload...');

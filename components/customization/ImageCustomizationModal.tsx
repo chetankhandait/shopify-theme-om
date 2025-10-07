@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { ShopifyProduct } from '@/lib/types';
 import { useCustomizationStore } from '@/lib/customization-store';
-import { uploadToCloudinary, uploadOriginalToCloudinary } from '@/lib/cloudinary';
+import { uploadToCloudinary } from '@/lib/cloudinary';
 import { Upload, RotateCcw, Save, X, Image as ImageIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
@@ -329,8 +329,74 @@ export default function ImageCustomizationModal({
     ctx.restore();
   };
 
-  // Compression is now handled during upload, not in customization modal
-  // This ensures maximum quality during customization
+  const compressImage = (file: File, maxSizeMB: number = 20): Promise<File> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) {
+        resolve(file);
+        return;
+      }
+
+      img.onload = () => {
+        const maxSize = maxSizeMB * 1024 * 1024;
+        let { width, height } = img;
+
+        // More aggressive dimension reduction
+        const maxDimension = 3000; // Reduced from 6K to 3K for better compression
+        if (width > maxDimension || height > maxDimension) {
+          const aspectRatio = width / height;
+          if (width > height) {
+            width = maxDimension;
+            height = maxDimension / aspectRatio;
+          } else {
+            height = maxDimension;
+            width = maxDimension * aspectRatio;
+          }
+        }
+
+        // Set canvas dimensions (no device pixel ratio for initial compression)
+        canvas.width = width;
+        canvas.height = height;
+        
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const compressBlob = (quality: number) => {
+          canvas.toBlob((blob) => {
+            if (blob) {
+              console.log(`Compression attempt: Quality=${quality}, Size=${(blob.size / 1024 / 1024).toFixed(2)}MB, Target=${(maxSize / 1024 / 1024).toFixed(2)}MB`);
+              
+              if (blob.size <= maxSize || quality <= 0.3) {
+                // Create a new File object with the compressed blob
+                const compressedFile = new File([blob], file.name, {
+                  type: 'image/jpeg',
+                  lastModified: Date.now()
+                });
+                console.log(`Image compressed from ${(file.size / 1024 / 1024).toFixed(2)}MB to ${(blob.size / 1024 / 1024).toFixed(2)}MB`);
+                resolve(compressedFile);
+              } else {
+                // Reduce quality and try again
+                compressBlob(quality - 0.1);
+              }
+            } else {
+              console.log('Could not create blob, using original');
+              resolve(file);
+            }
+          }, 'image/jpeg', quality);
+        };
+
+        // Start with moderate quality
+        compressBlob(0.8);
+      };
+
+      img.src = URL.createObjectURL(file);
+    });
+  };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -351,15 +417,34 @@ export default function ImageCustomizationModal({
     setIsLoading(true);
 
     try {
-      // Check for extremely large files (over 50MB)
-      if (file.size > 50 * 1024 * 1024) {
-        toast.error('File too large. Please use an image smaller than 50MB.');
+      let processedFile = file;
+      
+      // Check for extremely large files (over 100MB)
+      if (file.size > 100 * 1024 * 1024) {
+        toast.error('File too large. Please use an image smaller than 100MB.');
         setIsLoading(false);
         return;
       }
       
-      // No compression in customization modal - compression is handled during upload
-      // This ensures maximum quality during customization
+      // If file is larger than 20MB, compress it (increased from 10MB)
+      if (file.size > 20 * 1024 * 1024) {
+        toast.loading('Compressing large image...', { id: 'compress-progress' });
+        processedFile = await compressImage(file, 20); // Increased from 10MB to 20MB
+        toast.dismiss('compress-progress');
+        
+        // Check if compression was successful (increased limit)
+        if (processedFile.size > 25 * 1024 * 1024) {
+          toast.error('Could not compress image enough. Please use a smaller image.');
+          setIsLoading(false);
+          return;
+        }
+        
+        const originalSize = (file.size / 1024 / 1024).toFixed(1);
+        const compressedSize = (processedFile.size / 1024 / 1024).toFixed(1);
+        const compressionRatio = ((1 - processedFile.size / file.size) * 100).toFixed(0);
+        
+        // toast.success(`Image compressed: ${originalSize}MB → ${compressedSize}MB (${compressionRatio}% reduction)`);
+      }
 
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -385,7 +470,7 @@ export default function ImageCustomizationModal({
         setIsLoading(false);
         toast.error('Failed to read file');
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(processedFile);
     } catch (error) {
       console.error('File processing error:', error);
       setIsLoading(false);
@@ -684,40 +769,72 @@ export default function ImageCustomizationModal({
     });
   };
 
-  const optimizeBlobSize = async (blob: Blob, maxSize: number = 5 * 1024 * 1024): Promise<Blob> => {
+  const compressBlobForUpload = async (blob: Blob, maxSize: number): Promise<Blob> => {
     if (blob.size <= maxSize) {
       return blob;
     }
 
-    console.log(`Blob too large (${blob.size} bytes), optimizing...`);
+    console.log(`Compressing blob from ${(blob.size / 1024 / 1024).toFixed(2)}MB to target ${(maxSize / 1024 / 1024).toFixed(2)}MB`);
     
-    // Convert blob to image
-    const img = new Image();
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    
-    if (!ctx) return blob;
-
     return new Promise((resolve) => {
+      const img = new Image();
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) {
+        resolve(blob);
+        return;
+      }
+
       img.onload = () => {
-        // Calculate new dimensions to reduce file size
-        const reductionFactor = Math.sqrt(maxSize / blob.size);
-        const newWidth = Math.floor(img.width * reductionFactor);
-        const newHeight = Math.floor(img.height * reductionFactor);
+        let { width, height } = img;
         
-        canvas.width = newWidth;
-        canvas.height = newHeight;
-        ctx.drawImage(img, 0, 0, newWidth, newHeight);
+        // More aggressive compression - reduce dimensions significantly
+        const compressionFactor = Math.sqrt(maxSize / blob.size) * 0.8; // Extra 20% reduction
+        const newWidth = Math.floor(width * compressionFactor);
+        const newHeight = Math.floor(height * compressionFactor);
         
-        // Create optimized blob with lower quality
-        canvas.toBlob((optimizedBlob) => {
-          if (optimizedBlob) {
-            console.log(`Blob optimized from ${blob.size} to ${optimizedBlob.size} bytes`);
-            resolve(optimizedBlob);
-          } else {
-            resolve(blob);
-          }
-        }, 'image/jpeg', 0.7);
+        // Ensure minimum dimensions
+        const finalWidth = Math.max(newWidth, 800);
+        const finalHeight = Math.max(newHeight, 600);
+        
+        // Set canvas dimensions (no device pixel ratio for compression)
+        canvas.width = finalWidth;
+        canvas.height = finalHeight;
+        
+        // Enable image smoothing
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        
+        // Draw compressed image
+        ctx.drawImage(img, 0, 0, finalWidth, finalHeight);
+        
+        // Try different quality levels until we get under the size limit
+        const tryCompression = (quality: number): void => {
+          canvas.toBlob((compressedBlob) => {
+            if (compressedBlob) {
+              console.log(`Compression attempt: Quality=${quality}, Size=${(compressedBlob.size / 1024 / 1024).toFixed(2)}MB`);
+              
+              if (compressedBlob.size <= maxSize || quality <= 0.3) {
+                console.log(`Final compression: ${(blob.size / 1024 / 1024).toFixed(2)}MB → ${(compressedBlob.size / 1024 / 1024).toFixed(2)}MB`);
+                resolve(compressedBlob);
+              } else {
+                // Try with lower quality
+                tryCompression(quality - 0.1);
+              }
+            } else {
+              resolve(blob);
+            }
+          }, 'image/jpeg', quality);
+        };
+        
+        // Start with moderate quality
+        tryCompression(0.8);
+      };
+      
+      img.onerror = () => {
+        console.error('Failed to load image for compression');
+        resolve(blob);
       };
       
       img.src = URL.createObjectURL(blob);
@@ -735,47 +852,45 @@ export default function ImageCustomizationModal({
     try {
       toast.loading('Preparing images for upload...', { id: 'upload-progress' });
       
-      // Resize original image if it's too large to reduce file size
-      // Use higher resolution limit to maintain quality
-      const resizedOriginalCanvas = resizeImageIfNeeded(uploadedImage, 4096);
-
-      toast.loading('Converting images to upload format...', { id: 'upload-progress' });
-      
+      // Step 1: Create high-quality canvas blobs
       const renderedBlob = await canvasToBlob(canvasRef.current, false);
       const croppedBlob = await canvasToBlob(croppedCanvasRef.current, false);
+      
+      // Step 2: Create original image blob with high quality
+      const resizedOriginalCanvas = resizeImageIfNeeded(uploadedImage, 4096);
       const originalBlob = await canvasToBlob(resizedOriginalCanvas, true);
 
       console.log('Initial blob sizes:', {
-        rendered: renderedBlob.size,
-        cropped: croppedBlob.size,
-        original: originalBlob.size
+        rendered: (renderedBlob.size / 1024 / 1024).toFixed(2) + 'MB',
+        cropped: (croppedBlob.size / 1024 / 1024).toFixed(2) + 'MB',
+        original: (originalBlob.size / 1024 / 1024).toFixed(2) + 'MB'
       });
 
-      // Optimize blob sizes if they're too large
-      // Use higher limits to maintain quality
-      const optimizedRenderedBlob = await optimizeBlobSize(renderedBlob, 8 * 1024 * 1024); // 8MB limit
-      const optimizedCroppedBlob = await optimizeBlobSize(croppedBlob, 8 * 1024 * 1024); // 8MB limit
-      const optimizedOriginalBlob = await optimizeBlobSize(originalBlob, 15 * 1024 * 1024); // 15MB limit
+      toast.loading('Compressing images for optimal upload...', { id: 'upload-progress' });
 
-      console.log('Optimized blob sizes:', {
-        rendered: optimizedRenderedBlob.size,
-        cropped: optimizedCroppedBlob.size,
-        original: optimizedOriginalBlob.size
+      // Step 3: Compress images if they're too large
+      const compressedRenderedBlob = await compressBlobForUpload(renderedBlob, 3 * 1024 * 1024); // 3MB limit
+      const compressedCroppedBlob = await compressBlobForUpload(croppedBlob, 3 * 1024 * 1024); // 3MB limit
+      const compressedOriginalBlob = await compressBlobForUpload(originalBlob, 8 * 1024 * 1024); // 8MB limit
+
+      console.log('Compressed blob sizes:', {
+        rendered: (compressedRenderedBlob.size / 1024 / 1024).toFixed(2) + 'MB',
+        cropped: (compressedCroppedBlob.size / 1024 / 1024).toFixed(2) + 'MB',
+        original: (compressedOriginalBlob.size / 1024 / 1024).toFixed(2) + 'MB'
       });
 
       toast.loading('Uploading images to cloud storage...', { id: 'upload-progress' });
 
-      // Upload original image with higher quality for customization
-      const originalUrl = await uploadOriginalToCloudinary(optimizedOriginalBlob, `${product.handle}-original-${Date.now()}`);
-      
-      // Upload rendered and cropped images with standard quality
-      const [renderedUrl, croppedUrl] = await Promise.all([
-        uploadToCloudinary(optimizedRenderedBlob, `${product.handle}-rendered-${Date.now()}`),
-        uploadToCloudinary(optimizedCroppedBlob, `${product.handle}-cropped-${Date.now()}`)
+      // Step 4: Upload compressed images to Cloudinary
+      const [renderedUrl, croppedUrl, originalUrl] = await Promise.all([
+        uploadToCloudinary(compressedRenderedBlob, `${product.handle}-rendered-${Date.now()}`),
+        uploadToCloudinary(compressedCroppedBlob, `${product.handle}-cropped-${Date.now()}`),
+        uploadToCloudinary(compressedOriginalBlob, `${product.handle}-original-${Date.now()}`)
       ]);
 
       toast.loading('Saving customization...', { id: 'upload-progress' });
 
+      // Step 5: Save customization data
       saveCustomization(product.id, {
         originalImageUrl: originalUrl,
         renderedImageUrl: renderedUrl,
@@ -797,7 +912,7 @@ export default function ImageCustomizationModal({
       let errorMessage = 'Failed to save customization';
       if (error instanceof Error) {
         if (error.message.includes('File too large')) {
-          errorMessage = 'Image file is too large. Please use an image smaller than 10MB.';
+          errorMessage = 'Image file is too large. Please use a smaller image.';
         } else if (error.message.includes('timeout')) {
           errorMessage = 'Upload timed out. Please check your internet connection and try again.';
         } else if (error.message.includes('network')) {
