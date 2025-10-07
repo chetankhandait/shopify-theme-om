@@ -99,10 +99,10 @@ export async function compressImage(
   options: CompressionOptions = {}
 ): Promise<CompressionResult> {
   const {
-    maxSizeInMB = 20,
-    quality = 0.9,
-    maxWidth = 4000,
-    maxHeight = 4000
+    maxSizeInMB = 30, // Increased from 20MB to 30MB
+    quality = 0.95, // Increased from 0.9 to 0.95
+    maxWidth = 6000, // Increased from 4000 to 6000
+    maxHeight = 6000 // Increased from 4000 to 6000
   } = options;
 
   const maxSizeInBytes = mbToBytes(maxSizeInMB);
@@ -146,19 +146,19 @@ export async function compressImage(
          const sizeRatio = maxSizeInBytes / originalSize;
          let currentQuality = quality;
          
-         // For 13MB -> 10MB, we want minimal compression
+         // For high-quality compression, use higher quality settings
          if (sizeRatio > 0.8) {
            // Very close to target size, use maximum quality (minimal compression)
-           currentQuality = Math.max(0.95, Math.min(0.98, 0.96));
+           currentQuality = Math.max(0.98, Math.min(0.99, 0.99));
          } else if (sizeRatio > 0.6) {
            // Close to target size, use very high quality
-           currentQuality = Math.max(0.9, Math.min(0.95, 0.93));
+           currentQuality = Math.max(0.95, Math.min(0.98, 0.97));
          } else if (sizeRatio > 0.3) {
            // Large file, start with high quality
-           currentQuality = Math.max(0.85, Math.min(0.92, 0.88));
+           currentQuality = Math.max(0.92, Math.min(0.96, 0.94));
          } else {
            // Very large file, start with good quality
-           currentQuality = Math.max(0.8, Math.min(0.9, 0.85));
+           currentQuality = Math.max(0.88, Math.min(0.94, 0.91));
          }
         
          // Function to try compression with given quality
@@ -186,11 +186,11 @@ export async function compressImage(
                    // Still too big, try very small quality reduction
                    const sizeRatio = maxSizeInBytes / blob.size;
                    const qualityReduction = Math.pow(sizeRatio, 0.9); // Very conservative reduction
-                   const newQuality = Math.max(0.7, Math.min(0.95, testQuality * qualityReduction));
+                   const newQuality = Math.max(0.85, Math.min(0.98, testQuality * qualityReduction));
                    
                    console.log(`Reducing quality: ${testQuality.toFixed(3)} → ${newQuality.toFixed(3)}`);
                    
-                   if (newQuality < testQuality && newQuality >= 0.7) {
+                   if (newQuality < testQuality && newQuality >= 0.85) {
                      tryCompression(newQuality, iteration + 1);
                    } else {
                      // Can't compress further, return what we have
@@ -206,11 +206,11 @@ export async function compressImage(
                    // Too small, try slightly higher quality
                    const sizeRatio = maxSizeInBytes / blob.size;
                    const qualityIncrease = Math.pow(sizeRatio, 0.3); // Very conservative increase
-                   const newQuality = Math.min(0.95, Math.max(0.8, testQuality * qualityIncrease));
+                   const newQuality = Math.min(0.99, Math.max(0.9, testQuality * qualityIncrease));
                    
                    console.log(`Increasing quality: ${testQuality.toFixed(3)} → ${newQuality.toFixed(3)}`);
                    
-                   if (newQuality > testQuality && newQuality <= 0.95) {
+                   if (newQuality > testQuality && newQuality <= 0.99) {
                      tryCompression(newQuality, iteration + 1);
                    } else {
                      // Good enough, return what we have

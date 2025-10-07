@@ -302,35 +302,68 @@ export default function CheckoutPage() {
           color: '#3B82F6', // Blue color
         },
         handler: async function (response: any) {
-          // Verify payment with server
-          const verifyResponse = await fetch('/api/payment/razorpay/verify-payment', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_signature: response.razorpay_signature,
-            }),
-          });
+          try {
+            // Verify payment with server and pass order data for webhook processing
+            const verifyResponse = await fetch('/api/payment/razorpay/verify-payment', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature,
+                orderData: orderData, // Pass order data for webhook processing
+              }),
+            });
 
-          if (!verifyResponse.ok) {
-            throw new Error('Payment verification failed');
+            if (!verifyResponse.ok) {
+              throw new Error('Payment verification failed');
+            }
+
+            const verifyResult = await verifyResponse.json();
+
+            // Add payment details to order data
+            orderData.payment_details = {
+              payment_id: response.razorpay_payment_id,
+              order_id: response.razorpay_order_id,
+              signature: response.razorpay_signature,
+              method: verifyResult.payment.method,
+            };
+
+            // If order was created immediately, proceed to success page
+            if (verifyResult.order_created) {
+              toast.success('Payment successful! Order created.');
+              
+              // Redirect to success page
+              const params = new URLSearchParams({
+                payment_id: response.razorpay_payment_id,
+                order_id: response.razorpay_order_id,
+                total_price: orderData.total_price,
+                currency: 'INR',
+                payment_method: 'razorpay'
+              });
+              router.push(`/checkout/success?${params.toString()}`);
+            } else {
+              // Order will be created via webhook, show pending message
+              toast.success('Payment successful! Your order is being processed...');
+              
+              // Redirect to success page with pending status
+              const params = new URLSearchParams({
+                payment_id: response.razorpay_payment_id,
+                order_id: response.razorpay_order_id,
+                total_price: orderData.total_price,
+                currency: 'INR',
+                payment_method: 'razorpay',
+                status: 'pending'
+              });
+              router.push(`/checkout/success?${params.toString()}`);
+            }
+          } catch (error) {
+            console.error('Payment verification error:', error);
+            toast.error('Payment verification failed. Please contact support.');
+            throw error;
           }
-
-          const verifyResult = await verifyResponse.json();
-
-          // Add payment details to order data
-          orderData.payment_details = {
-            payment_id: response.razorpay_payment_id,
-            order_id: response.razorpay_order_id,
-            signature: response.razorpay_signature,
-            method: verifyResult.payment.method,
-          };
-
-          // Create order in Shopify
-          await createShopifyOrder(orderData);
         },
       };
 
