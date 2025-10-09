@@ -4,8 +4,6 @@ export interface ShopifyProduct {
   title: string;
   description: string;
   metafields?: Array<{
-    name: string;
-    name: string;
     namespace: string;
     key: string;
     value: string;

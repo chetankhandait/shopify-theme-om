@@ -882,11 +882,15 @@ export default function ImageCustomizationModal({
       toast.loading('Uploading images to cloud storage...', { id: 'upload-progress' });
 
       // Step 4: Upload compressed images to Cloudinary
-      const [renderedUrl, croppedUrl, originalUrl] = await Promise.all([
-        uploadToCloudinary(compressedRenderedBlob, `${product.handle}-rendered-${Date.now()}`),
-        uploadToCloudinary(compressedCroppedBlob, `${product.handle}-cropped-${Date.now()}`),
-        uploadToCloudinary(compressedOriginalBlob, `${product.handle}-original-${Date.now()}`)
+      const [renderedResult, croppedResult, originalResult] = await Promise.all([
+        uploadToCloudinary(new File([compressedRenderedBlob], `${product.handle}-rendered-${Date.now()}.jpg`, { type: 'image/jpeg' })),
+        uploadToCloudinary(new File([compressedCroppedBlob], `${product.handle}-cropped-${Date.now()}.jpg`, { type: 'image/jpeg' })),
+        uploadToCloudinary(new File([compressedOriginalBlob], `${product.handle}-original-${Date.now()}.jpg`, { type: 'image/jpeg' }))
       ]);
+
+      const renderedUrl = renderedResult.secure_url;
+      const croppedUrl = croppedResult.secure_url;
+      const originalUrl = originalResult.secure_url;
 
       toast.loading('Saving customization...', { id: 'upload-progress' });
 
