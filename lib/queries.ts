@@ -25,6 +25,7 @@ export const FEATURED_COLLECTIONS_QUERY = `
                   {namespace: "custom", key: "frame_length"},
                   {namespace: "custom", key: "frame_size"},
                   {namespace: "custom", key: "is_collage"},
+                  {namespace: "custom", key: "is_upload"},
                   {namespace: "custom", key: "number_of_files"}
                 ]) {
                   namespace
@@ -82,6 +83,7 @@ export const COLLECTION_PRODUCTS_QUERY = `
               {namespace: "custom", key: "frame_length"},
               {namespace: "custom", key: "frame_size"},
               {namespace: "custom", key: "is_collage"},
+              {namespace: "custom", key: "is_upload"},
               {namespace: "custom", key: "number_of_files"}
             ]) {
               namespace
@@ -141,6 +143,7 @@ export const PRODUCT_QUERY = `
         {namespace: "custom", key: "frame_length"},
         {namespace: "custom", key: "frame_size"},
         {namespace: "custom", key: "is_collage"},
+        {namespace: "custom", key: "is_upload"},
         {namespace: "custom", key: "number_of_files"}
       ]) {
         namespace
@@ -456,6 +459,7 @@ export const ALL_PRODUCTS_QUERY = `
             {namespace: "custom", key: "frame_length"},
             {namespace: "custom", key: "frame_size"},
             {namespace: "custom", key: "is_collage"},
+            {namespace: "custom", key: "is_upload"},
             {namespace: "custom", key: "number_of_files"}
           ]) {
             namespace
