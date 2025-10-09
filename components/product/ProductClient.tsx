@@ -49,11 +49,35 @@ export default function ProductClient({ product }: ProductClientProps) {
   const isCollageProduct = isCollageMetafield?.value === 'true';
   console.log('Is collage product:', isCollageProduct);
 
-  // Get number of files from variant value when is_collage is true
-  const numberOfFiles = isCollageProduct && selectedVariant 
-    ? parseInt(selectedVariant.title, 10) || 0
-    : 0;
-  console.log('Number of files from variant:', numberOfFiles);
+  // Check for is_upload metafield
+  const isUploadMetafield = product.metafields?.find(m => 
+    m && typeof m === 'object' && 
+    'key' in m && m.key === 'is_upload' && 
+    'namespace' in m && m.namespace === 'custom'
+  );
+  console.log('Is upload metafield:', isUploadMetafield);
+  
+  const isUploadProduct = isUploadMetafield?.value === 'true';
+  console.log('Is upload product:', isUploadProduct);
+
+  // Get number of files from metafield when is_upload is true
+  const numberOfFilesMetafield = product.metafields?.find(m => 
+    m && typeof m === 'object' && 
+    'key' in m && m.key === 'number_of_files' && 
+    'namespace' in m && m.namespace === 'custom'
+  );
+  console.log('Number of files metafield:', numberOfFilesMetafield);
+  
+  const numberOfFilesFromMetafield = parseInt(numberOfFilesMetafield?.value || '0', 10);
+  console.log('Number of files from metafield:', numberOfFilesFromMetafield);
+
+  // Determine number of files based on conditions
+  const numberOfFiles = isUploadProduct 
+    ? numberOfFilesFromMetafield
+    : isCollageProduct && selectedVariant 
+      ? parseInt(selectedVariant.title, 10) || 0
+      : 0;
+  console.log('Final number of files:', numberOfFiles);
 
   // Initialize selected variant on component mount
   useState(() => {
@@ -135,7 +159,7 @@ export default function ProductClient({ product }: ProductClientProps) {
     }
 
     // Check if files are required but not uploaded
-    if (isCollageProduct && numberOfFiles > 0 && uploadedImages.length !== numberOfFiles) {
+    if ((isCollageProduct || isUploadProduct) && numberOfFiles > 0 && uploadedImages.length !== numberOfFiles) {
       toast.error(`Please upload ${numberOfFiles} files before adding to cart`, {
         duration: 3000,
         style: {
@@ -167,9 +191,9 @@ export default function ProductClient({ product }: ProductClientProps) {
 
     setIsAddingToCart(true);
     try {
-      // Create order notes with image URLs if this is a collage product
-      const orderNotes = isCollageProduct && uploadedImages.length > 0 
-        ? `COLLAGE IMAGES:\n${selectedVariant.title} - ${product.title} (Qty: ${quantity})\n${uploadedImages.map((img, index) => `  - Collage Image ${index + 1}: ${img.url}`).join('\n')}`
+      // Create order notes with image URLs if this is a collage or upload product
+      const orderNotes = (isCollageProduct || isUploadProduct) && uploadedImages.length > 0 
+        ? `${isCollageProduct ? 'COLLAGE IMAGES' : 'UPLOADED IMAGES'}:\n${selectedVariant.title} - ${product.title} (Qty: ${quantity})\n${uploadedImages.map((img, index) => `  - ${isCollageProduct ? 'Collage' : 'Uploaded'} Image ${index + 1}: ${img.url}`).join('\n')}`
         : undefined;
 
       console.log('Order notes being sent:', orderNotes);
@@ -178,7 +202,7 @@ export default function ProductClient({ product }: ProductClientProps) {
       await addToCart(selectedVariant.id, quantity, orderNotes);
       
       // Clear uploaded images from localStorage after successful add to cart
-      if (isCollageProduct && uploadedImages.length > 0) {
+      if ((isCollageProduct || isUploadProduct) && uploadedImages.length > 0) {
         localStorage.removeItem(`uploaded_images_${product.id}`);
         setUploadedImages([]);
       }
@@ -216,7 +240,7 @@ export default function ProductClient({ product }: ProductClientProps) {
     }
 
     // Check if files are required but not uploaded
-    if (isCollageProduct && numberOfFiles > 0 && uploadedImages.length !== numberOfFiles) {
+    if ((isCollageProduct || isUploadProduct) && numberOfFiles > 0 && uploadedImages.length !== numberOfFiles) {
       toast.error(`Please upload ${numberOfFiles} files before proceeding`, {
         duration: 3000,
         style: {
@@ -234,9 +258,9 @@ export default function ProductClient({ product }: ProductClientProps) {
 
     setIsAddingToCart(true);
     try {
-      // Create order notes with image URLs if this is a collage product
-      const orderNotes = isCollageProduct && uploadedImages.length > 0 
-        ? `COLLAGE IMAGES:\n${selectedVariant.title} - ${product.title} (Qty: ${quantity})\n${uploadedImages.map((img, index) => `  - Collage Image ${index + 1}: ${img.url}`).join('\n')}`
+      // Create order notes with image URLs if this is a collage or upload product
+      const orderNotes = (isCollageProduct || isUploadProduct) && uploadedImages.length > 0 
+        ? `${isCollageProduct ? 'COLLAGE IMAGES' : 'UPLOADED IMAGES'}:\n${selectedVariant.title} - ${product.title} (Qty: ${quantity})\n${uploadedImages.map((img, index) => `  - ${isCollageProduct ? 'Collage' : 'Uploaded'} Image ${index + 1}: ${img.url}`).join('\n')}`
         : undefined;
 
       console.log('Buy Now - Order notes being sent:', orderNotes);
@@ -246,7 +270,7 @@ export default function ProductClient({ product }: ProductClientProps) {
       await addToCart(selectedVariant.id, quantity, orderNotes);
 
       // Clear uploaded images from localStorage after successful add to cart
-      if (isCollageProduct && uploadedImages.length > 0) {
+      if ((isCollageProduct || isUploadProduct) && uploadedImages.length > 0) {
         localStorage.removeItem(`uploaded_images_${product.id}`);
         setUploadedImages([]);
       }
@@ -322,14 +346,20 @@ export default function ProductClient({ product }: ProductClientProps) {
           ))}
 
           {/* File Upload Section */}
-          {isCollageProduct && numberOfFiles > 0 && (
+          {(isCollageProduct || isUploadProduct) && numberOfFiles > 0 && (
             <div className="mb-6">
               <h3 className="font-medium text-gray-900 mb-2">Upload Your Files</h3>
               <p className="text-sm text-gray-600 mb-4">
-                Please upload {numberOfFiles} {numberOfFiles === 1 ? 'file' : 'files'} for your collage
-                {selectedVariant && (
+                Please upload {numberOfFiles} {numberOfFiles === 1 ? 'file' : 'files'} 
+                {isUploadProduct ? ' for this product' : ' for your collage'}
+                {isCollageProduct && selectedVariant && (
                   <span className="block text-xs text-gray-500 mt-1">
                     (Based on selected variant: {selectedVariant.title})
+                  </span>
+                )}
+                {isUploadProduct && (
+                  <span className="block text-xs text-gray-500 mt-1">
+                    (Based on product configuration)
                   </span>
                 )}
               </p>
