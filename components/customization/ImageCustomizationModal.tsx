@@ -939,7 +939,7 @@ export default function ImageCustomizationModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-4xl w-[95vw] h-[90vh] overflow-auto lg:overflow-hidden p-0">
+      <DialogContent className="sm:max-w-4xl w-[95vw] h-[90vh] overflow-auto lg:overflow-auto p-0">
         <div className="flex flex-col h-full min-h-0 overflow-scroll">
           {/* Header */}
           <DialogHeader className="px-6 py-4 border-b border-gray-100">
@@ -954,7 +954,8 @@ export default function ImageCustomizationModal({
           </DialogHeader>
 
           {/* Content */}
-          <div className="flex flex-1 overflow-auto lg:overflow-hidden flex-col lg:flex-col min-h-0">
+          <div className="flex flex-1 overflow-auto lg:overflow-auto
+           flex-col lg:flex-col min-h-0">
             {/* Canvas Section */}
             <div className="flex-1 p-0 sm:p-6 bg-gray-50 flex items-center justify-center">
               <div className="space-y-4 relative">

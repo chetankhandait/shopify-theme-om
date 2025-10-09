@@ -49,15 +49,11 @@ export default function ProductClient({ product }: ProductClientProps) {
   const isCollageProduct = isCollageMetafield?.value === 'true';
   console.log('Is collage product:', isCollageProduct);
 
-  const numberOfFilesMetafield = product.metafields?.find(m => 
-    m && typeof m === 'object' && 
-    'key' in m && m.key === 'number_of_files' && 
-    'namespace' in m && m.namespace === 'custom'
-  );
-  console.log('Number of files metafield:', numberOfFilesMetafield);
-  
-  const numberOfFiles = parseInt(numberOfFilesMetafield?.value || '0', 10);
-  console.log('Number of files:', numberOfFiles);
+  // Get number of files from variant value when is_collage is true
+  const numberOfFiles = isCollageProduct && selectedVariant 
+    ? parseInt(selectedVariant.title, 10) || 0
+    : 0;
+  console.log('Number of files from variant:', numberOfFiles);
 
   // Initialize selected variant on component mount
   useState(() => {
@@ -331,6 +327,11 @@ export default function ProductClient({ product }: ProductClientProps) {
               <h3 className="font-medium text-gray-900 mb-2">Upload Your Files</h3>
               <p className="text-sm text-gray-600 mb-4">
                 Please upload {numberOfFiles} {numberOfFiles === 1 ? 'file' : 'files'} for your collage
+                {selectedVariant && (
+                  <span className="block text-xs text-gray-500 mt-1">
+                    (Based on selected variant: {selectedVariant.title})
+                  </span>
+                )}
               </p>
               <FileUploadSection
                 maxFiles={numberOfFiles}
@@ -434,7 +435,7 @@ export default function ProductClient({ product }: ProductClientProps) {
 
           {/* Additional Info */}
           <div className="border-t pt-6 space-y-4 text-sm text-gray-600">
-            <p>• Free shipping on orders over $50</p>
+            <p>• Free shipping for all orders</p>
             <p>• 30-day return policy</p>
             <p>• Secure checkout with SSL encryption</p>
           </div>

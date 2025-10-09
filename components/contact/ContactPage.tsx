@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Mail, Phone, MapPin, Clock, Send } from 'lucide-react';
+import { Mail, Phone, MapPin, Clock, MessageCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function ContactPage() {
@@ -29,11 +29,32 @@ export default function ContactPage() {
     setIsSubmitting(true);
 
     try {
-      // Here you would typically send the form data to your backend
-      // For now, we'll just simulate a successful submission
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Format the message for WhatsApp
+      const whatsappMessage = `*New Contact Form Submission*
+
+*Name:* ${formData.name}
+*Email:* ${formData.email}
+*Subject:* ${formData.subject}
+
+*Message:*
+${formData.message}
+
+---
+*Sent from Frame You Way Contact Form*`;
+
+      // Encode the message for URL
+      const encodedMessage = encodeURIComponent(whatsappMessage);
       
-      toast.success('Message sent successfully! We\'ll get back to you soon.', {
+      // WhatsApp number (9358611776)
+      const whatsappNumber = '9358611776';
+      
+      // Create WhatsApp URL
+      const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+      
+      // Open WhatsApp in a new tab
+      window.open(whatsappUrl, '_blank');
+      
+      toast.success('Opening WhatsApp to send your message...', {
         duration: 4000,
         style: {
           background: '#10B981',
@@ -49,7 +70,7 @@ export default function ContactPage() {
         message: '',
       });
     } catch (error) {
-      toast.error('Failed to send message. Please try again.', {
+      toast.error('Failed to open WhatsApp. Please try again.', {
         duration: 4000,
         style: {
           background: '#EF4444',
@@ -94,14 +115,14 @@ export default function ContactPage() {
       <div className="text-center mb-16">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">Contact Us</h1>
         <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-          We'd love to hear from you. Send us a message and we'll respond as soon as possible.
+          We'd love to hear from you. Fill out the form below and we'll open WhatsApp to send your message directly to us.
         </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
         {/* Contact Form */}
         <div>
-          <h2 className="text-2xl font-semibold text-gray-900 mb-6">Send us a Message</h2>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-6">Send us a Message via WhatsApp</h2>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div>
@@ -175,11 +196,11 @@ export default function ContactPage() {
               size="lg"
             >
               {isSubmitting ? (
-                'Sending...'
+                'Opening WhatsApp...'
               ) : (
                 <>
-                  <Send className="h-5 w-5 mr-2" />
-                  Send Message
+                  <MessageCircle className="h-5 w-5 mr-2" />
+                  Send via WhatsApp
                 </>
               )}
             </Button>

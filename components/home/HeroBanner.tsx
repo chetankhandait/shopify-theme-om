@@ -19,7 +19,7 @@ const slides = [
     cta: "Shop Now",
     href: "/collections",
     image: {
-      desktop: "/banners/image4.png",
+      desktop: "/banners/image2.png",
       mobile: "/banners/image6.png"
     },
     fallbackBackground: "bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900"
@@ -37,7 +37,7 @@ const slides = [
     cta: "Explore",
     href: "/collections",
     image: {
-      desktop: "/banners/image2.png",
+      desktop: "/banners/image4.png",
       mobile: "/banners/image5.png"
     },
     fallbackBackground: "bg-gradient-to-br from-gray-900 via-gray-800 to-black"
