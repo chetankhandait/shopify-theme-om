@@ -24,8 +24,8 @@ export default function RefundPolicyPage() {
                 </p>
                 <p className="text-gray-700 leading-relaxed">
                   To start a return, you can contact us at{' '}
-                  <a href="mailto:nexusnestam@gmail.com" className="text-blue-600 hover:text-blue-800 underline">
-                    nexusnestam@gmail.com
+                  <a href="mailto:frameyourways@gmail.com" className="text-blue-600 hover:text-blue-800 underline">
+                    frameyourways@gmail.com
                   </a>
                   . Please note that returns will need to be sent to the following address: [INSERT RETURN ADDRESS]
                 </p>
@@ -40,8 +40,8 @@ export default function RefundPolicyPage() {
                 </div>
                 <p className="text-gray-700 leading-relaxed">
                   You can always contact us for any return question at{' '}
-                  <a href="mailto:nexusnestam@gmail.com" className="text-blue-600 hover:text-blue-800 underline">
-                    nexusnestam@gmail.com
+                  <a href="mailto:frameyourways@gmail.com" className="text-blue-600 hover:text-blue-800 underline">
+                    frameyourways@gmail.com
                   </a>
                   .
                 </p>
@@ -127,8 +127,8 @@ export default function RefundPolicyPage() {
                   <div className="bg-red-50 border-l-4 border-red-400 p-4">
                     <p className="text-red-800">
                       <strong>Delayed Refund?</strong> If more than 15 business days have passed since we've approved your return, please contact us at{' '}
-                      <a href="mailto:nexusnestam@gmail.com" className="text-red-600 hover:text-red-800 underline">
-                        nexusnestam@gmail.com
+                      <a href="mailto:frameyourways@gmail.com" className="text-red-600 hover:text-red-800 underline">
+                        frameyourways@gmail.com
                       </a>
                       .
                     </p>
@@ -144,14 +144,14 @@ export default function RefundPolicyPage() {
                 <div className="flex items-center space-x-2">
                   <span className="text-gray-600">Contact us:</span>
                   <a 
-                    href="mailto:nexusnestam@gmail.com" 
+                    href="mailto:frameyourways@gmail.com" 
                     className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200 inline-flex items-center space-x-2"
                   >
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
                       <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
                     </svg>
-                    <span>nexusnestam@gmail.com</span>
+                    <span>frameyourways@gmail.com</span>
                   </a>
                 </div>
               </section>

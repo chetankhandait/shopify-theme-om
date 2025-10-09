@@ -16,7 +16,7 @@ interface CartStore {
   _hasHydrated: boolean;
   
   // Actions
-  addToCart: (variantId: string, quantity: number) => Promise<void>;
+  addToCart: (variantId: string, quantity: number, note?: string) => Promise<void>;
   updateCartItem: (variantId: string, quantity: number) => Promise<void>;
   removeFromCart: (variantId: string) => Promise<void>;
   clearCart: () => void;
@@ -111,23 +111,25 @@ export const useCartStore = create<CartStore>()(
       isLoading: false,
       _hasHydrated: false,
 
-      addToCart: async (variantId: string, quantity: number) => {
+      addToCart: async (variantId: string, quantity: number, note?: string) => {
         set({ isLoading: true });
         try {
           const state = get();
           
-          console.log('Adding to cart:', { variantId, quantity, currentCartId: state.cartId });
+          console.log('Adding to cart:', { variantId, quantity, note, currentCartId: state.cartId });
           
           if (!state.cartId) {
             // Create new cart
-            console.log('Creating new cart with variant:', variantId, 'quantity:', quantity);
+            console.log('Creating new cart with variant:', variantId, 'quantity:', quantity, 'note:', note);
+            const variables = {
+              input: {
+                lines: [{ merchandiseId: variantId, quantity, attributes: note ? [{ key: 'note', value: note }] : [] }]
+              }
+            };
+            console.log('CREATE_CART_MUTATION variables:', variables);
             const response = await shopifyFetchClient({
               query: CREATE_CART_MUTATION,
-              variables: {
-                input: {
-                  lines: [{ merchandiseId: variantId, quantity }]
-                }
-              }
+              variables
             });
 
             console.log('Cart creation response:', response);
@@ -154,13 +156,15 @@ export const useCartStore = create<CartStore>()(
             }
           } else {
             // Add to existing cart
-            console.log('Adding to existing cart:', state.cartId);
+            console.log('Adding to existing cart:', state.cartId, 'note:', note);
+            const variables = {
+              cartId: state.cartId,
+              lines: [{ merchandiseId: variantId, quantity, attributes: note ? [{ key: 'note', value: note }] : [] }]
+            };
+            console.log('ADD_TO_CART_MUTATION variables:', variables);
             const response = await shopifyFetchClient({
               query: ADD_TO_CART_MUTATION,
-              variables: {
-                cartId: state.cartId,
-                lines: [{ merchandiseId: variantId, quantity }]
-              }
+              variables
             });
 
             console.log('Add to cart response:', response);

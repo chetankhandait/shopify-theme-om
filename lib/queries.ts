@@ -23,7 +23,9 @@ export const FEATURED_COLLECTIONS_QUERY = `
                   {namespace: "custom", key: "frame_image"},
                   {namespace: "custom", key: "frame_cover"},
                   {namespace: "custom", key: "frame_length"},
-              {namespace: "custom", key: "frame_size"}
+                  {namespace: "custom", key: "frame_size"},
+                  {namespace: "custom", key: "is_collage"},
+                  {namespace: "custom", key: "number_of_files"}
                 ]) {
                   namespace
                   key
@@ -78,7 +80,9 @@ export const COLLECTION_PRODUCTS_QUERY = `
               {namespace: "custom", key: "frame_image"},
               {namespace: "custom", key: "frame_cover"},
               {namespace: "custom", key: "frame_length"},
-              {namespace: "custom", key: "frame_size"}
+              {namespace: "custom", key: "frame_size"},
+              {namespace: "custom", key: "is_collage"},
+              {namespace: "custom", key: "number_of_files"}
             ]) {
               namespace
               key
@@ -135,7 +139,9 @@ export const PRODUCT_QUERY = `
         {namespace: "custom", key: "frame_image"},
         {namespace: "custom", key: "frame_cover"},
         {namespace: "custom", key: "frame_length"},
-        {namespace: "custom", key: "frame_size"}
+        {namespace: "custom", key: "frame_size"},
+        {namespace: "custom", key: "is_collage"},
+        {namespace: "custom", key: "number_of_files"}
       ]) {
         namespace
         key
@@ -213,6 +219,10 @@ export const CREATE_CART_MUTATION = `
             node {
               id
               quantity
+              attributes {
+                key
+                value
+              }
               merchandise {
                 ... on ProductVariant {
                   id
@@ -267,6 +277,10 @@ export const ADD_TO_CART_MUTATION = `
             node {
               id
               quantity
+              attributes {
+                key
+                value
+              }
               merchandise {
                 ... on ProductVariant {
                   id
@@ -374,6 +388,10 @@ export const GET_CART_QUERY = `
           node {
             id
             quantity
+            attributes {
+              key
+              value
+            }
             merchandise {
               ... on ProductVariant {
                 id
@@ -436,7 +454,9 @@ export const ALL_PRODUCTS_QUERY = `
             {namespace: "custom", key: "frame_image"},
             {namespace: "custom", key: "frame_cover"},
             {namespace: "custom", key: "frame_length"},
-            {namespace: "custom", key: "frame_size"}
+            {namespace: "custom", key: "frame_size"},
+            {namespace: "custom", key: "is_collage"},
+            {namespace: "custom", key: "number_of_files"}
           ]) {
             namespace
             key

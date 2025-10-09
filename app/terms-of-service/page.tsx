@@ -322,8 +322,8 @@ export default function TermsOfServicePage() {
                 <h2 className="text-2xl font-semibold text-gray-900 mb-6 border-b-2 border-blue-500 pb-2">SECTION 24 - CONTACT INFORMATION</h2>
                 <p className="text-gray-700 leading-relaxed mb-6">
                   Questions about the Terms of Service should be sent to us at{' '}
-                  <a href="mailto:nexusnestam@gmail.com" className="text-blue-600 hover:text-blue-800 underline">
-                    nexusnestam@gmail.com
+                  <a href="mailto:frameyourways@gmail.com" className="text-blue-600 hover:text-blue-800 underline">
+                    frameyourways@gmail.com
                   </a>
                 </p>
                 
@@ -331,7 +331,7 @@ export default function TermsOfServicePage() {
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Our Contact Information:</h3>
                   <div className="space-y-2 text-gray-700">
                     <p><strong>Trading Name:</strong> [INSERT TRADING NAME]</p>
-                    <p><strong>Email:</strong> <a href="mailto:nexusnestam@gmail.com" className="text-blue-600 hover:text-blue-800 underline">nexusnestam@gmail.com</a></p>
+                    <p><strong>Email:</strong> <a href="mailto:frameyourways@gmail.com" className="text-blue-600 hover:text-blue-800 underline">frameyourways@gmail.com</a></p>
                     <p><strong>Address:</strong> [INSERT BUSINESS ADDRESS]</p>
                     <p><strong>Phone:</strong> [INSERT BUSINESS PHONE NUMBER]</p>
                     <p><strong>Registration Number:</strong> [INSERT BUSINESS REGISTRATION NUMBER]</p>

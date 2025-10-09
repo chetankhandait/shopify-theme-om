@@ -130,8 +130,8 @@ export default function ShippingPolicyPage() {
                   </p>
                   <p className="text-gray-600 text-sm italic">
                     If you need international shipping, please contact us at{' '}
-                    <a href="mailto:nexusnestam@gmail.com" className="text-blue-600 hover:text-blue-800 underline">
-                      nexusnestam@gmail.com
+                    <a href="mailto:frameyourways@gmail.com" className="text-blue-600 hover:text-blue-800 underline">
+                      frameyourways@gmail.com
                     </a>{' '}
                     for special arrangements.
                   </p>
@@ -219,10 +219,10 @@ export default function ShippingPolicyPage() {
                       <span className="font-semibold text-gray-900">Email</span>
                     </div>
                     <a 
-                      href="mailto:nexusnestam@gmail.com" 
+                      href="mailto:frameyourways@gmail.com" 
                       className="text-blue-600 hover:text-blue-800 underline text-sm"
                     >
-                      nexusnestam@gmail.com
+                      frameyourways@gmail.com
                     </a>
                   </div>
                   

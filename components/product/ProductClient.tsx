@@ -9,6 +9,7 @@ import RecommendedProducts from '@/components/product/RecommendedProducts';
 import { Button } from '@/components/ui/button';
 import toast from 'react-hot-toast';
 import TestimonialSection from '../home/TestimonialSection';
+import FileUploadSection from './FileUploadSection';
 
 interface ProductClientProps {
   product: ShopifyProduct;
@@ -31,8 +32,32 @@ export default function ProductClient({ product }: ProductClientProps) {
   });
   const [quantity, setQuantity] = useState(1);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [uploadedImages, setUploadedImages] = useState<Array<{url: string, publicId: string}>>([]);
 
   const { addToCart, openCart } = useCartStore();
+
+  // Get metafield values with proper null checks and debugging
+  console.log('Product metafields:', product.metafields);
+
+  const isCollageMetafield = product.metafields?.find(m => 
+    m && typeof m === 'object' && 
+    'key' in m && m.key === 'is_collage' && 
+    'namespace' in m && m.namespace === 'custom'
+  );
+  console.log('Is collage metafield:', isCollageMetafield);
+  
+  const isCollageProduct = isCollageMetafield?.value === 'true';
+  console.log('Is collage product:', isCollageProduct);
+
+  const numberOfFilesMetafield = product.metafields?.find(m => 
+    m && typeof m === 'object' && 
+    'key' in m && m.key === 'number_of_files' && 
+    'namespace' in m && m.namespace === 'custom'
+  );
+  console.log('Number of files metafield:', numberOfFilesMetafield);
+  
+  const numberOfFiles = parseInt(numberOfFilesMetafield?.value || '0', 10);
+  console.log('Number of files:', numberOfFiles);
 
   // Initialize selected variant on component mount
   useState(() => {
@@ -113,6 +138,18 @@ export default function ProductClient({ product }: ProductClientProps) {
       return;
     }
 
+    // Check if files are required but not uploaded
+    if (isCollageProduct && numberOfFiles > 0 && uploadedImages.length !== numberOfFiles) {
+      toast.error(`Please upload ${numberOfFiles} files before adding to cart`, {
+        duration: 3000,
+        style: {
+          background: '#EF4444',
+          color: '#fff',
+        },
+      });
+      return;
+    }
+
     if (!selectedVariant.availableForSale) {
       toast.error('This variant is out of stock', {
         duration: 3000,
@@ -128,12 +165,28 @@ export default function ProductClient({ product }: ProductClientProps) {
       variantId: selectedVariant.id,
       quantity,
       productTitle: product.title,
-      variantTitle: selectedVariant.title
+      variantTitle: selectedVariant.title,
+      imageUrls: uploadedImages.map(img => img.url)
     });
 
     setIsAddingToCart(true);
     try {
-      await addToCart(selectedVariant.id, quantity);
+      // Create order notes with image URLs if this is a collage product
+      const orderNotes = isCollageProduct && uploadedImages.length > 0 
+        ? `COLLAGE IMAGES:\n${selectedVariant.title} - ${product.title} (Qty: ${quantity})\n${uploadedImages.map((img, index) => `  - Collage Image ${index + 1}: ${img.url}`).join('\n')}`
+        : undefined;
+
+      console.log('Order notes being sent:', orderNotes);
+      console.log('Uploaded images:', uploadedImages);
+
+      await addToCart(selectedVariant.id, quantity, orderNotes);
+      
+      // Clear uploaded images from localStorage after successful add to cart
+      if (isCollageProduct && uploadedImages.length > 0) {
+        localStorage.removeItem(`uploaded_images_${product.id}`);
+        setUploadedImages([]);
+      }
+      
       toast.success(`Added ${quantity} item(s) to cart!`, {
         duration: 2000,
         style: {
@@ -166,6 +219,18 @@ export default function ProductClient({ product }: ProductClientProps) {
       return;
     }
 
+    // Check if files are required but not uploaded
+    if (isCollageProduct && numberOfFiles > 0 && uploadedImages.length !== numberOfFiles) {
+      toast.error(`Please upload ${numberOfFiles} files before proceeding`, {
+        duration: 3000,
+        style: {
+          background: '#EF4444',
+          color: '#fff',
+        },
+      });
+      return;
+    }
+
     if (!selectedVariant.availableForSale) {
       toast.error('This variant is out of stock');
       return;
@@ -173,8 +238,22 @@ export default function ProductClient({ product }: ProductClientProps) {
 
     setIsAddingToCart(true);
     try {
+      // Create order notes with image URLs if this is a collage product
+      const orderNotes = isCollageProduct && uploadedImages.length > 0 
+        ? `COLLAGE IMAGES:\n${selectedVariant.title} - ${product.title} (Qty: ${quantity})\n${uploadedImages.map((img, index) => `  - Collage Image ${index + 1}: ${img.url}`).join('\n')}`
+        : undefined;
+
+      console.log('Buy Now - Order notes being sent:', orderNotes);
+      console.log('Buy Now - Uploaded images:', uploadedImages);
+
       // Add to cart first
-      await addToCart(selectedVariant.id, quantity);
+      await addToCart(selectedVariant.id, quantity, orderNotes);
+
+      // Clear uploaded images from localStorage after successful add to cart
+      if (isCollageProduct && uploadedImages.length > 0) {
+        localStorage.removeItem(`uploaded_images_${product.id}`);
+        setUploadedImages([]);
+      }
 
       // Redirect to checkout immediately
       window.location.href = '/checkout';
@@ -245,6 +324,21 @@ export default function ProductClient({ product }: ProductClientProps) {
               </div>
             </div>
           ))}
+
+          {/* File Upload Section */}
+          {isCollageProduct && numberOfFiles > 0 && (
+            <div className="mb-6">
+              <h3 className="font-medium text-gray-900 mb-2">Upload Your Files</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Please upload {numberOfFiles} {numberOfFiles === 1 ? 'file' : 'files'} for your collage
+              </p>
+              <FileUploadSection
+                maxFiles={numberOfFiles}
+                productId={product.id}
+                onImagesChange={setUploadedImages}
+              />
+            </div>
+          )}
 
           {/* Quantity Selector */}
           <div>
