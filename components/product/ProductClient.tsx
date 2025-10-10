@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import toast from 'react-hot-toast';
 import TestimonialSection from '../home/TestimonialSection';
 import FileUploadSection from './FileUploadSection';
+import NameplateSection from './NameplateSection';
 
 interface ProductClientProps {
   product: ShopifyProduct;
@@ -33,8 +34,26 @@ export default function ProductClient({ product }: ProductClientProps) {
   const [quantity, setQuantity] = useState(1);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<Array<{url: string, publicId: string}>>([]);
+  const [nameplateText, setNameplateText] = useState('');
 
   const { addToCart, openCart } = useCartStore();
+
+
+  // Restore uploaded images from localStorage on component mount
+  useEffect(() => {
+    const storageKey = `uploaded_images_${product.id}`;
+    const savedImages = localStorage.getItem(storageKey);
+    if (savedImages) {
+      try {
+        const parsedImages = JSON.parse(savedImages);
+        setUploadedImages(parsedImages);
+        console.log('Restored images from localStorage:', parsedImages);
+      } catch (error) {
+        console.error('Error parsing saved images:', error);
+        localStorage.removeItem(storageKey);
+      }
+    }
+  }, [product.id]);
 
   // Get metafield values with proper null checks and debugging
   console.log('Product metafields:', product.metafields);
@@ -59,6 +78,17 @@ export default function ProductClient({ product }: ProductClientProps) {
   
   const isUploadProduct = isUploadMetafield?.value === 'true';
   console.log('Is upload product:', isUploadProduct);
+
+  // Check for is_nameplate metafield
+  const isNameplateMetafield = product.metafields?.find(m => 
+    m && typeof m === 'object' && 
+    'key' in m && m.key === 'is_nameplate' && 
+    'namespace' in m && m.namespace === 'custom'
+  );
+  console.log('Is nameplate metafield:', isNameplateMetafield);
+  
+  const isNameplateProduct = isNameplateMetafield?.value === 'true';
+  console.log('Is nameplate product:', isNameplateProduct);
 
   // Get number of files from metafield when is_upload is true
   const numberOfFilesMetafield = product.metafields?.find(m => 
@@ -191,21 +221,53 @@ export default function ProductClient({ product }: ProductClientProps) {
 
     setIsAddingToCart(true);
     try {
-      // Create order notes with image URLs if this is a collage or upload product
-      const orderNotes = (isCollageProduct || isUploadProduct) && uploadedImages.length > 0 
-        ? `${isCollageProduct ? 'COLLAGE IMAGES' : 'UPLOADED IMAGES'}:\n${selectedVariant.title} - ${product.title} (Qty: ${quantity})\n${uploadedImages.map((img, index) => `  - ${isCollageProduct ? 'Collage' : 'Uploaded'} Image ${index + 1}: ${img.url}`).join('\n')}`
-        : undefined;
-
-      console.log('Order notes being sent:', orderNotes);
-      console.log('Uploaded images:', uploadedImages);
-
-      await addToCart(selectedVariant.id, quantity, orderNotes);
+      // Create order notes with image URLs
+      let orderNotes = '';
       
-      // Clear uploaded images from localStorage after successful add to cart
-      if ((isCollageProduct || isUploadProduct) && uploadedImages.length > 0) {
-        localStorage.removeItem(`uploaded_images_${product.id}`);
-        setUploadedImages([]);
+      // Add customization images if they exist
+      if (customizationData) {
+        orderNotes += 'CUSTOMIZATION IMAGES:\n';
+        orderNotes += `1. ${selectedVariant.title} - ${product.title} (Qty: ${quantity})\n`;
+        if (customizationData.originalImageUrl) {
+          orderNotes += `  - User Uploaded Image: ${customizationData.originalImageUrl}\n`;
+        }
+        if (customizationData.croppedImageUrl) {
+          orderNotes += `  - Cropped Image: ${customizationData.croppedImageUrl}\n`;
+        }
+        if (customizationData.renderedImageUrl) {
+          orderNotes += `  - Final Customized Image: ${customizationData.renderedImageUrl}\n`;
+        }
       }
+      
+      // Add uploaded images if they exist
+      if ((isCollageProduct || isUploadProduct) && uploadedImages.length > 0) {
+        if (orderNotes) orderNotes += '\n';
+        orderNotes += `${isCollageProduct ? 'COLLAGE IMAGES' : 'UPLOADED IMAGES'}:\n`;
+        orderNotes += `${uploadedImages.length}. ${selectedVariant.title} - ${product.title} (Qty: ${quantity})\n`;
+        orderNotes += uploadedImages.map((img, index) => `  - ${isCollageProduct ? 'Collage' : 'Uploaded'} Image ${index + 1}: ${img.url}`).join('\n');
+      }
+      
+      // Add nameplate text if it exists
+      if (isNameplateProduct && nameplateText.trim()) {
+        if (orderNotes) orderNotes += '\n';
+        orderNotes += 'NAMEPLATE TEXT:\n';
+        orderNotes += `1. ${selectedVariant.title} - ${product.title} (Qty: ${quantity})\n`;
+        orderNotes += `  - Nameplate Text: "${nameplateText}"\n`;
+      }
+      
+      const finalOrderNotes = orderNotes || undefined;
+
+      console.log('Order notes being sent:', finalOrderNotes);
+      console.log('Uploaded images:', uploadedImages);
+      console.log('Is collage product:', isCollageProduct);
+      console.log('Is upload product:', isUploadProduct);
+      console.log('Number of files required:', numberOfFiles);
+      console.log('Number of files uploaded:', uploadedImages.length);
+
+      await addToCart(selectedVariant.id, quantity, finalOrderNotes);
+      
+      // Don't clear localStorage here - let it be cleared after successful order completion
+      // The data needs to persist until checkout is complete
       
       toast.success(`Added ${quantity} item(s) to cart!`, {
         duration: 2000,
@@ -258,22 +320,50 @@ export default function ProductClient({ product }: ProductClientProps) {
 
     setIsAddingToCart(true);
     try {
-      // Create order notes with image URLs if this is a collage or upload product
-      const orderNotes = (isCollageProduct || isUploadProduct) && uploadedImages.length > 0 
-        ? `${isCollageProduct ? 'COLLAGE IMAGES' : 'UPLOADED IMAGES'}:\n${selectedVariant.title} - ${product.title} (Qty: ${quantity})\n${uploadedImages.map((img, index) => `  - ${isCollageProduct ? 'Collage' : 'Uploaded'} Image ${index + 1}: ${img.url}`).join('\n')}`
-        : undefined;
+      // Create order notes with image URLs
+      let orderNotes = '';
+      
+      // Add customization images if they exist
+      if (customizationData) {
+        orderNotes += 'CUSTOMIZATION IMAGES:\n';
+        orderNotes += `1. ${selectedVariant.title} - ${product.title} (Qty: ${quantity})\n`;
+        if (customizationData.originalImageUrl) {
+          orderNotes += `  - User Uploaded Image: ${customizationData.originalImageUrl}\n`;
+        }
+        if (customizationData.croppedImageUrl) {
+          orderNotes += `  - Cropped Image: ${customizationData.croppedImageUrl}\n`;
+        }
+        if (customizationData.renderedImageUrl) {
+          orderNotes += `  - Final Customized Image: ${customizationData.renderedImageUrl}\n`;
+        }
+      }
+      
+      // Add uploaded images if they exist
+      if ((isCollageProduct || isUploadProduct) && uploadedImages.length > 0) {
+        if (orderNotes) orderNotes += '\n';
+        orderNotes += `${isCollageProduct ? 'COLLAGE IMAGES' : 'UPLOADED IMAGES'}:\n`;
+        orderNotes += `${uploadedImages.length}. ${selectedVariant.title} - ${product.title} (Qty: ${quantity})\n`;
+        orderNotes += uploadedImages.map((img, index) => `  - ${isCollageProduct ? 'Collage' : 'Uploaded'} Image ${index + 1}: ${img.url}`).join('\n');
+      }
+      
+      // Add nameplate text if it exists
+      if (isNameplateProduct && nameplateText.trim()) {
+        if (orderNotes) orderNotes += '\n';
+        orderNotes += 'NAMEPLATE TEXT:\n';
+        orderNotes += `1. ${selectedVariant.title} - ${product.title} (Qty: ${quantity})\n`;
+        orderNotes += `  - Nameplate Text: "${nameplateText}"\n`;
+      }
+      
+      const finalOrderNotes = orderNotes || undefined;
 
-      console.log('Buy Now - Order notes being sent:', orderNotes);
+      console.log('Buy Now - Order notes being sent:', finalOrderNotes);
       console.log('Buy Now - Uploaded images:', uploadedImages);
 
       // Add to cart first
-      await addToCart(selectedVariant.id, quantity, orderNotes);
+      await addToCart(selectedVariant.id, quantity, finalOrderNotes);
 
-      // Clear uploaded images from localStorage after successful add to cart
-      if ((isCollageProduct || isUploadProduct) && uploadedImages.length > 0) {
-        localStorage.removeItem(`uploaded_images_${product.id}`);
-        setUploadedImages([]);
-      }
+      // Don't clear localStorage here - let it be cleared after successful order completion
+      // The data needs to persist until checkout is complete
 
       // Redirect to checkout immediately
       window.location.href = '/checkout';
@@ -367,6 +457,20 @@ export default function ProductClient({ product }: ProductClientProps) {
                 maxFiles={numberOfFiles}
                 productId={product.id}
                 onImagesChange={setUploadedImages}
+              />
+            </div>
+          )}
+
+          {/* Nameplate Section */}
+          {isNameplateProduct && (
+            <div className="mb-6">
+              <h3 className="font-medium text-gray-900 mb-2">Customize Your Nameplate</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Enter the text you want to appear on your nameplate
+              </p>
+              <NameplateSection
+                productId={product.id}
+                onTextChange={setNameplateText}
               />
             </div>
           )}

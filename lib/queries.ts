@@ -144,6 +144,7 @@ export const PRODUCT_QUERY = `
         {namespace: "custom", key: "frame_size"},
         {namespace: "custom", key: "is_collage"},
         {namespace: "custom", key: "is_upload"},
+        {namespace: "custom", key: "is_nameplate"},
         {namespace: "custom", key: "number_of_files"}
       ]) {
         namespace

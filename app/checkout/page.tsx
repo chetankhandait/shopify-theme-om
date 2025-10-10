@@ -335,6 +335,15 @@ export default function CheckoutPage() {
             if (verifyResult.order_created) {
               toast.success('Payment successful! Order created.');
               
+              // Clear localStorage data after successful order
+              items.forEach(item => {
+                localStorage.removeItem(`uploaded_images_${item.productId}`);
+                localStorage.removeItem(`nameplate_text_${item.productId}`);
+              });
+              
+              // Clear cart
+              clearCart();
+              
               // Redirect to success page
               const params = new URLSearchParams({
                 payment_id: response.razorpay_payment_id,
@@ -347,6 +356,15 @@ export default function CheckoutPage() {
             } else {
               // Order will be created via webhook, show pending message
               toast.success('Payment successful! Your order is being processed...');
+              
+              // Clear localStorage data after successful payment (order will be created via webhook)
+              items.forEach(item => {
+                localStorage.removeItem(`uploaded_images_${item.productId}`);
+                localStorage.removeItem(`nameplate_text_${item.productId}`);
+              });
+              
+              // Clear cart
+              clearCart();
               
               // Redirect to success page with pending status
               const params = new URLSearchParams({
@@ -404,6 +422,15 @@ export default function CheckoutPage() {
     if (response.ok && result.success) {
       toast.success('Order placed successfully!');
       
+      // Clear localStorage data after successful order
+      items.forEach(item => {
+        localStorage.removeItem(`uploaded_images_${item.productId}`);
+        localStorage.removeItem(`nameplate_text_${item.productId}`);
+      });
+      
+      // Clear cart
+      clearCart();
+      
       // Redirect to success page with order details
       const params = new URLSearchParams({
         order_id: result.order.id.toString(),
@@ -431,10 +458,63 @@ export default function CheckoutPage() {
 
     setIsLoading(true);
     try {
+      // Helper function to get uploaded images from localStorage
+      const getUploadedImages = (productId: string): Array<{url: string, publicId: string}> | null => {
+        const storageKey = `uploaded_images_${productId}`;
+        const savedImages = localStorage.getItem(storageKey);
+        if (savedImages) {
+          try {
+            return JSON.parse(savedImages);
+          } catch (error) {
+            console.error('Error parsing saved images:', error);
+            localStorage.removeItem(storageKey);
+            return null;
+          }
+        }
+        return null;
+      };
+
+      // Helper function to get nameplate text from localStorage
+      const getNameplateText = (productId: string): string | null => {
+        const storageKey = `nameplate_text_${productId}`;
+        return localStorage.getItem(storageKey);
+      };
+
+      // Helper function to get product type information
+      const getProductType = (productId: string): {isCollage: boolean, isUpload: boolean, isNameplate: boolean} | null => {
+        // This would need to be passed from the product data, but for now we'll check localStorage
+        const uploadedImages = getUploadedImages(productId);
+        const nameplateText = getNameplateText(productId);
+        
+        return {
+          isCollage: false, // This would need to be determined from product metafields
+          isUpload: !!(uploadedImages && uploadedImages.length > 0),
+          isNameplate: !!(nameplateText && nameplateText.trim().length > 0)
+        };
+      };
+
+      // Debug: Check what's in localStorage
+      console.log('=== CHECKOUT DEBUG ===');
+      console.log('Cart items:', items);
+      items.forEach(item => {
+        const uploadedImages = getUploadedImages(item.productId);
+        const nameplateText = getNameplateText(item.productId);
+        console.log(`Product ${item.productId}:`, {
+          uploadedImages,
+          nameplateText,
+          productTitle: item.title
+        });
+      });
+
       // Collect image information from cart items and customizations
-      const imageInfo = collectProductImageInfo(items, getCustomization);
+      const imageInfo = collectProductImageInfo(items, getCustomization, getUploadedImages, getProductType, getNameplateText);
+      console.log('Image info collected:', imageInfo);
+      
       const imageNotes = formatImageInfoForOrderNotes(imageInfo);
+      console.log('Formatted image notes:', imageNotes);
+      
       const imageSummary = createImageSummary(imageInfo);
+      console.log('Image summary:', imageSummary);
 
       // Prepare order data for Shopify
       const orderData = {

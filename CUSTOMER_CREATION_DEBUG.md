@@ -111,3 +111,6 @@ const customer = await createCustomer({
 4. If issues persist, share the specific error messages from the logs
 
 The updated code now provides much more detailed error information, making it easier to identify and fix the root cause of the customer creation failure.
+
+
+
