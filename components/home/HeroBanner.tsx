@@ -8,32 +8,56 @@ import Link from 'next/link';
 const slides = [
   {
     id: 1,
-    title: "Premium Quality Products",
-    subtitle: "Discover Excellence",
-    description: "Curated collection of premium products designed to enhance your lifestyle with unmatched quality and style.",
+    title: {
+      desktop: "Frame your way, glossy photo frames. ",
+      mobile: "Frame your way, glossy photo frames."
+    },
+    description: {
+      desktop: "We don’t just print pictures — we preserve emotions. Our glossy acrylic wall frames bring your memories to life with stunning clarity, vibrant colors, and a luxurious shine that reflects pure happiness.",
+      mobile: "We don’t just print pictures — we preserve emotions. Our glossy acrylic wall frames bring your memories to life with stunning clarity, vibrant colors, and a luxurious shine that reflects pure happiness."
+    },
     cta: "Shop Now",
     href: "/collections",
-    image: "/banners/hero-1.webp",
+    image: {
+      desktop: "/banners/image2.png",
+      mobile: "/banners/image6.png"
+    },
     fallbackBackground: "bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900"
   },
   {
     id: 2,
-    title: "Crafted with Precision",
-    subtitle: "Artisan Collection",
-    description: "Each piece is meticulously crafted by skilled artisans, bringing you products that stand the test of time.",
+    title: {
+      desktop: "Frame your way",
+      mobile: "Frame your way"
+    },
+    description: {
+      desktop: "Premium glossy acrylic finish that enhances every detail. Vibrant colors that stay as fresh as your memories. Crafted with love to bring a smile every time you see it.",
+      mobile: "Premium glossy acrylic finish that enhances every detail. \n Vibrant colors that stay as fresh as your memories. \n Crafted with love to bring a smile every time you see it."
+    },
     cta: "Explore",
     href: "/collections",
-    image: "/banners/hero-2.jpg",
+    image: {
+      desktop: "/banners/image4.png",
+      mobile: "/banners/image5.png"
+    },
     fallbackBackground: "bg-gradient-to-br from-gray-900 via-gray-800 to-black"
   },
   {
     id: 3,
-    title: "Modern Design Meets Function",
-    subtitle: "Contemporary Living",
-    description: "Where innovative design meets practical functionality, creating products that elevate your everyday experience.",
+    title: {
+      desktop: "Frame your way",
+      mobile: "Modern Design"
+    },
+    description: {
+      desktop: "Bringing your emotions to life — one glossy frame at a time.” \n “Where every shine tells your story.” \n “Pure joy. Pure clarity. Pure acrylic.”",
+      mobile: "Bringing your emotions to life — one glossy frame at a time.” \n “Where every shine tells your story.”  \n “Pure joy. Pure clarity. Pure acrylic.”"
+    },
     cta: "Discover",
     href: "/collections",
-    image: "/banners/hero-3.jpg",
+    image: {
+      desktop: "/banners/image3.png",
+      mobile: "/banners/image1.png"
+    },
     fallbackBackground: "bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900"
   }
 ];
@@ -42,6 +66,18 @@ export default function HeroBanner() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const [imageLoadErrors, setImageLoadErrors] = useState<Set<number>>(new Set());
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect screen size
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
 
   const handleImageError = (slideId: number) => {
     setImageLoadErrors(prev => new Set(prev).add(slideId));
@@ -90,17 +126,27 @@ export default function HeroBanner() {
           >
             {/* Background Image */}
             {!imageLoadErrors.has(slide.id) && (
-              <div 
-                className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-                style={{
-                  backgroundImage: `url(${slide.image})`
-                }}
-              />
+              <>
+                {/* Desktop Image */}
+                <div 
+                  className="hidden md:block absolute inset-0 bg-cover bg-center bg-no-repeat"
+                  style={{
+                    backgroundImage: `url(${slide.image.desktop})`
+                  }}
+                />
+                {/* Mobile Image */}
+                <div 
+                  className="block md:hidden absolute inset-0 bg-cover bg-center bg-no-repeat"
+                  style={{
+                    backgroundImage: `url(${slide.image.mobile})`
+                  }}
+                />
+              </>
             )}
             
             {/* Hidden img for error detection */}
             <img
-              src={slide.image}
+              src={isMobile ? slide.image.mobile : slide.image.desktop}
               alt=""
               className="hidden"
               onError={() => handleImageError(slide.id)}
@@ -110,22 +156,19 @@ export default function HeroBanner() {
             <div className="absolute inset-0 bg-black/40" />
             
             <div className="relative h-full flex items-end justify-start">
-              <div className="max-w-lg mx-4 sm:mx-6 lg:mx-8 mb-16 text-left text-white">
+              <div className={`${isMobile ? 'max-w-sm' : 'max-w-lg'} mx-4 sm:mx-6 lg:mx-8 ${isMobile ? 'mb-8' : 'mb-16'} text-left text-white`}>
                 <div className={`transition-all duration-1000 delay-300 ${
                   index === currentSlide 
                     ? 'opacity-100 translate-y-0' 
                     : 'opacity-0 translate-y-4'
                 }`}>
                   {/* Text container with enhanced background for better readability */}
-                  <div className="bg-black/30 backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-white/10">
-                    <p className="text-xs font-medium tracking-wider uppercase mb-3 text-white drop-shadow-lg">
-                      {slide.subtitle}
-                    </p>
-                    <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-4 leading-tight text-white drop-shadow-xl">
-                      {slide.title}
+                  <div className="bg-black/30 backdrop-blur-sm rounded-2xl p-4 md:p-6 lg:p-8 border border-white/10">
+                    <h1 className="text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold mb-3 md:mb-4 leading-tight text-white drop-shadow-xl">
+                      {isMobile ? slide.title.mobile : slide.title.desktop}
                     </h1>
-                    <p className="text-sm md:text-base mb-6 text-white/95 leading-relaxed drop-shadow-lg">
-                      {slide.description}
+                    <p className="text-sm md:text-base mb-4 md:mb-6 text-white/95 leading-relaxed drop-shadow-lg">
+                      {isMobile ? slide.description.mobile : slide.description.desktop}
                     </p>
                     <Button
                       asChild

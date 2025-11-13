@@ -1,14 +1,14 @@
 // Cloudinary upload utility using signed uploads
-export const uploadToCloudinary = async (file: Blob, filename: string, retries: number = 3): Promise<string> => {
+export const uploadToCloudinary = async (file: File, retries: number = 3): Promise<{secure_url: string, public_id: string}> => {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      console.log(`Uploading to Cloudinary via API route (attempt ${attempt}/${retries}):`, filename);
+      console.log(`Uploading to Cloudinary via API route (attempt ${attempt}/${retries}):`, file.name);
       console.log('File size:', file.size, 'bytes');
       
       // Use our API route for signed uploads
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('filename', filename);
+      formData.append('filename', file.name);
       
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute timeout
@@ -52,7 +52,10 @@ export const uploadToCloudinary = async (file: Blob, filename: string, retries: 
       const data = JSON.parse(responseText);
       console.log('Upload successful:', data.secure_url);
       
-      return data.secure_url;
+      return {
+        secure_url: data.secure_url,
+        public_id: data.public_id
+      };
     } catch (error) {
       console.error(`Upload error (attempt ${attempt}/${retries}):`, error);
       
@@ -67,4 +70,24 @@ export const uploadToCloudinary = async (file: Blob, filename: string, retries: 
   }
   
   throw new Error('Upload failed: Maximum retries exceeded');
+};
+
+// Cloudinary delete utility
+export const deleteFromCloudinary = async (publicId: string): Promise<void> => {
+  try {
+    const response = await fetch('/api/delete-image', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ publicId }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to delete image from Cloudinary');
+    }
+  } catch (error) {
+    console.error('Error deleting image:', error);
+    throw error;
+  }
 };

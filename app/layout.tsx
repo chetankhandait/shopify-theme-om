@@ -6,8 +6,8 @@ import Layout from '@/components/layout/Layout';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Shopify Storefront - Premium Products',
-  description: 'Discover our curated collection of premium products with fast shipping and exceptional service.',
+  title: 'Frame You Way - Premium Acrylic Frames',
+  description: 'Shop Frame You Way for beautiful, customizable acrylic frames. Display your memories in style with our premium quality acrylic photo frames and fast shipping.',
 };
 
 export default function RootLayout({

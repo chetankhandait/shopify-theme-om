@@ -15,7 +15,7 @@ export default function ShippingPolicyPage() {
             <div className="text-4xl mb-4">📦</div>
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">Shipping Policy</h1>
             <p className="text-gray-600">
-              <strong>Effective Date:</strong> [Insert Date]
+              <strong>Effective Date:</strong> 10th October 2025
             </p>
           </div>
 
@@ -130,8 +130,8 @@ export default function ShippingPolicyPage() {
                   </p>
                   <p className="text-gray-600 text-sm italic">
                     If you need international shipping, please contact us at{' '}
-                    <a href="mailto:nexusnestam@gmail.com" className="text-blue-600 hover:text-blue-800 underline">
-                      nexusnestam@gmail.com
+                    <a href="mailto:frameyourways@gmail.com" className="text-blue-600 hover:text-blue-800 underline">
+                      frameyourways@gmail.com
                     </a>{' '}
                     for special arrangements.
                   </p>
@@ -219,10 +219,10 @@ export default function ShippingPolicyPage() {
                       <span className="font-semibold text-gray-900">Email</span>
                     </div>
                     <a 
-                      href="mailto:nexusnestam@gmail.com" 
+                      href="mailto:frameyourways@gmail.com" 
                       className="text-blue-600 hover:text-blue-800 underline text-sm"
                     >
-                      nexusnestam@gmail.com
+                      frameyourways@gmail.com
                     </a>
                   </div>
                   
@@ -233,7 +233,7 @@ export default function ShippingPolicyPage() {
                       </svg>
                       <span className="font-semibold text-gray-900">Phone</span>
                     </div>
-                    <p className="text-gray-600 text-sm">[+91 XXXXX XXXXX]</p>
+                    <p className="text-gray-600 text-sm">+91 9358611776</p>
                   </div>
                   
                   <div className="bg-white rounded-lg p-4 shadow-sm">

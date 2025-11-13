@@ -11,20 +11,34 @@ export interface ProductImageInfo {
   userUploadedImageUrl?: string;
   croppedImageUrl?: string;
   frameImageUrl?: string;
+  uploadedImages?: Array<{url: string, publicId: string}>;
+  nameplateText?: string;
+  isCollageProduct?: boolean;
+  isUploadProduct?: boolean;
+  isNameplateProduct?: boolean;
 }
 
 /**
  * Collects all image URLs from cart items and their customizations
  * @param cartItems - Array of cart items
  * @param getCustomization - Function to get customization data for a product
+ * @param getUploadedImages - Function to get uploaded images for a product
+ * @param getProductType - Function to get product type info (isCollage, isUpload, isNameplate)
+ * @param getNameplateText - Function to get nameplate text for a product
  * @returns Array of ProductImageInfo objects
  */
 export function collectProductImageInfo(
   cartItems: CartItem[],
-  getCustomization: (productId: string) => CustomizationData | null
+  getCustomization: (productId: string) => CustomizationData | null,
+  getUploadedImages?: (productId: string) => Array<{url: string, publicId: string}> | null,
+  getProductType?: (productId: string) => {isCollage: boolean, isUpload: boolean, isNameplate: boolean} | null,
+  getNameplateText?: (productId: string) => string | null
 ): ProductImageInfo[] {
   return cartItems.map(item => {
     const customization = getCustomization(item.productId);
+    const uploadedImages = getUploadedImages ? getUploadedImages(item.productId) : null;
+    const productType = getProductType ? getProductType(item.productId) : null;
+    const nameplateText = getNameplateText ? getNameplateText(item.productId) : null;
     
     const imageInfo: ProductImageInfo = {
       productId: item.productId,
@@ -40,6 +54,23 @@ export function collectProductImageInfo(
       imageInfo.userUploadedImageUrl = customization.originalImageUrl;
       imageInfo.croppedImageUrl = customization.croppedImageUrl;
       imageInfo.frameImageUrl = customization.frameImageUrl;
+    }
+
+    // Add uploaded images if available
+    if (uploadedImages && uploadedImages.length > 0) {
+      imageInfo.uploadedImages = uploadedImages;
+    }
+
+    // Add nameplate text if available
+    if (nameplateText && nameplateText.trim()) {
+      imageInfo.nameplateText = nameplateText;
+    }
+
+    // Add product type info if available
+    if (productType) {
+      imageInfo.isCollageProduct = productType.isCollage;
+      imageInfo.isUploadProduct = productType.isUpload;
+      imageInfo.isNameplateProduct = productType.isNameplate;
     }
 
     return imageInfo;
@@ -71,6 +102,24 @@ export function formatImageInfoForOrderNotes(imageInfo: ProductImageInfo[]): str
       productSection.push(`  - User Uploaded Image: ${info.userUploadedImageUrl || ''}`);
       productSection.push(`  - Cropped Image: ${info.croppedImageUrl || ''}`);
       productSection.push(`  - Final Customized Image: ${info.customizedImageUrl || ''}`);
+    }
+
+    // Add uploaded images if they exist
+    if (info.uploadedImages && info.uploadedImages.length > 0) {
+      const imageType = info.isCollageProduct ? 'COLLAGE IMAGES' : 'UPLOADED IMAGES';
+      productSection.push(`\n${imageType}:`);
+      productSection.push(`${info.uploadedImages.length}. ${productName} (Qty: ${info.quantity})`);
+      info.uploadedImages.forEach((img, imgIndex) => {
+        const imgLabel = info.isCollageProduct ? 'Collage' : 'Uploaded';
+        productSection.push(`  - ${imgLabel} Image ${imgIndex + 1}: ${img.url}`);
+      });
+    }
+
+    // Add nameplate text if it exists
+    if (info.nameplateText && info.nameplateText.trim()) {
+      productSection.push(`\nNAMEPLATE TEXT:`);
+      productSection.push(`1. ${productName} (Qty: ${info.quantity})`);
+      productSection.push(`  - Nameplate Text: "${info.nameplateText}"`);
     }
 
     noteSections.push(productSection.join('\n'));

@@ -163,8 +163,8 @@ export default function PrivacyPolicyPage() {
                 <h2 className="text-2xl font-semibold text-gray-900 mb-4">Contact</h2>
                 <p className="text-gray-700 leading-relaxed">
                   Should you have any questions about our privacy practices or this Privacy Policy, or if you would like to exercise any of the rights available to you, please call or email us at{' '}
-                  <a href="mailto:nexusnestam@gmail.com" className="text-blue-600 hover:text-blue-800 underline">
-                    nexusnestam@gmail.com
+                  <a href="mailto:frameyourways@gmail.com" className="text-blue-600 hover:text-blue-800 underline">
+                    frameyourways@gmail.com
                   </a>
                 </p>
               </section>

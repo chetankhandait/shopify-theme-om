@@ -45,12 +45,12 @@ export async function POST(request: NextRequest) {
       filename
     });
 
-    // Check file size (10MB limit)
-    const maxSize = 10 * 1024 * 1024; // 10MB
+    // Check file size (20MB limit)
+    const maxSize = 20 * 1024 * 1024; // 20MB
     if (file.size > maxSize) {
       console.error('File too large:', file.size, 'bytes');
       return NextResponse.json(
-        { error: 'File too large. Maximum size is 10MB.' },
+        { error: 'File too large. Maximum size is 20MB.' },
         { status: 413 }
       );
     }
